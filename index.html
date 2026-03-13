@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rhyme Finder — Poetry Helper for Kids</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fredoka+One&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #7C5CBF;
+    --purple-light: #EDE8F9;
+    --purple-dark: #4E3880;
+    --teal: #2BBFA0;
+    --teal-light: #E0F7F3;
+    --yellow: #FFCE47;
+    --yellow-light: #FFF8DC;
+    --coral: #FF6B6B;
+    --bg: #F7F4FF;
+    --white: #FFFFFF;
+    --text: #2D2545;
+    --text-muted: #7B6FA0;
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+    color: var(--text);
+  }
+
+  /* Decorative blobs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    z-index: 0;
+    opacity: 0.18;
+  }
+  body::before {
+    width: 420px; height: 420px;
+    background: var(--purple);
+    top: -120px; left: -120px;
+  }
+  body::after {
+    width: 320px; height: 320px;
+    background: var(--teal);
+    bottom: -80px; right: -80px;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 620px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .header-icon {
+    font-size: 52px;
+    display: block;
+    margin-bottom: 0.5rem;
+    animation: bounce 2s ease infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 42px;
+    color: var(--purple-dark);
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+  }
+
+  .header p {
+    font-size: 17px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-weight: 600;
+  }
+
+  /* Search card */
+  .search-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 1.75rem;
+    box-shadow: 0 4px 24px rgba(124,92,191,0.10);
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .search-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .search-row input {
+    flex: 1;
+    height: 52px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--bg);
+    border: 2.5px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0 16px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .search-row input::placeholder { color: #BDB4D8; font-weight: 600; }
+  .search-row input:focus { border-color: var(--purple); background: #FAF8FF; }
+
+  .search-btn {
+    height: 52px;
+    padding: 0 22px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    color: var(--white);
+    background: var(--purple);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .search-btn:hover { background: var(--purple-dark); }
+  .search-btn:active { transform: scale(0.97); }
+  .search-btn:disabled { background: #C4B8E8; cursor: not-allowed; }
+
+  /* Status */
+  .status {
+    min-height: 22px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 2px;
+  }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2.5px solid #DDD8F5;
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Results */
+  .results { display: flex; flex-direction: column; gap: 10px; }
+
+  .rhyme-card {
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    box-shadow: 0 2px 12px rgba(124,92,191,0.07);
+    animation: fadeUp 0.4s ease both;
+    border-left: 4px solid var(--purple-light);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .rhyme-card:hover {
+    border-left-color: var(--purple);
+    box-shadow: 0 4px 18px rgba(124,92,191,0.13);
+  }
+
+  .rhyme-card:nth-child(2) { border-left-color: #C8ECE5; animation-delay: 0.05s; }
+  .rhyme-card:nth-child(2):hover { border-left-color: var(--teal); }
+  .rhyme-card:nth-child(3) { border-left-color: #FFEEC0; animation-delay: 0.08s; }
+  .rhyme-card:nth-child(3):hover { border-left-color: var(--yellow); }
+  .rhyme-card:nth-child(4) { animation-delay: 0.11s; }
+  .rhyme-card:nth-child(5) { animation-delay: 0.14s; }
+  .rhyme-card:nth-child(6) { animation-delay: 0.17s; }
+  .rhyme-card:nth-child(7) { animation-delay: 0.20s; }
+  .rhyme-card:nth-child(8) { animation-delay: 0.23s; }
+  .rhyme-card:nth-child(9) { animation-delay: 0.26s; }
+  .rhyme-card:nth-child(10) { animation-delay: 0.29s; }
+
+  .rhyme-num {
+    width: 28px; height: 28px;
+    background: var(--purple-light);
+    color: var(--purple-dark);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .rhyme-body { flex: 1; }
+
+  .rhyme-word {
+    font-family: 'Fredoka One', cursive;
+    font-size: 22px;
+    color: var(--purple-dark);
+    line-height: 1.2;
+    margin-bottom: 3px;
+  }
+
+  .rhyme-def {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
+  .error-card {
+    background: #FFF2F2;
+    border: 2px dashed #FFC0C0;
+    border-radius: var(--radius-sm);
+    padding: 1.25rem;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--coral);
+  }
+
+  /* Tip box */
+  .tip-box {
+    margin-top: 1.5rem;
+    background: var(--yellow-light);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: fadeUp 0.6s 0.2s ease both;
+    border-left: 4px solid var(--yellow);
+  }
+  .tip-box .tip-icon { font-size: 20px; flex-shrink: 0; }
+  .tip-box p { font-size: 13px; font-weight: 700; color: #7A6030; line-height: 1.6; }
+  .tip-box strong { color: #5A4010; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 2.5rem;
+    font-size: 13px;
+    color: #BDB4D8;
+    font-weight: 700;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <span class="header-icon">✏️</span>
+    <h1>Rhyme Finder</h1>
+    <p>Type a word and discover words that rhyme with it!</p>
+  </div>
+
+  <div class="search-card">
+    <div class="search-label">Enter your word</div>
+    <div class="search-row">
+      <input type="text" id="wordInput" placeholder="e.g. rain, star, blue..." maxlength="40" autocomplete="off" />
+      <button class="search-btn" onclick="findRhymes()" id="searchBtn">Find Rhymes!</button>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+  <div class="results" id="results"></div>
+
+  <div class="tip-box">
+    <span class="tip-icon">💡</span>
+    <p><strong>Poetry tip:</strong> Rhyming words are great for the ends of lines in poems! Try words like <strong>light</strong>, <strong>dream</strong>, <strong>day</strong>, or <strong>sky</strong> to get started.</p>
+  </div>
+
+  <div class="footer">Made for young poets ✨</div>
+
+</div>
+
+<script>
+const input = document.getElementById('wordInput');
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+const btn = document.getElementById('searchBtn');
+
+input.addEventListener('keydown', e => { if (e.key === 'Enter') findRhymes(); });
+
+async function findRhymes() {
+  const word = input.value.trim();
+  if (!word) {
+    input.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Searching...';
+  statusEl.innerHTML = '<div class="spinner"></div> Finding rhymes for <strong style="color:#4E3880">' + word + '</strong>...';
+  resultsEl.innerHTML = '';
+
+  const prompt = `You are a children's poetry assistant helping 10-year-olds find rhyming words.
+
+The user wants rhyming words for: "${word}"
+
+Rules:
+- Return up to 10 words that rhyme with "${word}"
+- ALL words must be completely age-appropriate for 10-year-olds (no profanity, no violence, no sexual content, no scary or disturbing words)
+- Include a short, simple definition for each word (1 sentence, easy for a child to understand)
+- Only include real English words
+- If the input word is inappropriate, return an empty list
+
+Respond ONLY with a valid JSON array (no extra text, no markdown backticks):
+[
+  {"word": "cat", "definition": "A small furry pet that meows and loves to nap."},
+  {"word": "hat", "definition": "Something you wear on your head to stay warm or block the sun."}
+]
+
+If no rhymes exist or the word is inappropriate, return: []`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '[]';
+    let rhymes;
+    try {
+      rhymes = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch {
+      rhymes = [];
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Find Rhymes!';
+
+    if (!Array.isArray(rhymes) || rhymes.length === 0) {
+      statusEl.innerHTML = '';
+      resultsEl.innerHTML = '<div class="error-card">😕 Hmm, no rhymes found for that word. Try a different one!</div>';
+      return;
+    }
+
+    statusEl.innerHTML = '🎉 Found <strong style="color:#4E3880">' + rhymes.length + ' rhyme' + (rhymes.length !== 1 ? 's' : '') + '</strong> for <strong style="color:#4E3880">' + word + '</strong>!';
+
+    resultsEl.innerHTML = rhymes.map((r, i) => `
+      <div class="rhyme-card">
+        <div class="rhyme-num">${i + 1}</div>
+        <div class="rhyme-body">
+          <div class="rhyme-word">${r.word}</div>
+          <div class="rhyme-def">${r.definition}</div>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Find Rhymes!';
+    statusEl.innerHTML = '';
+    resultsEl.innerHTML = '<div class="error-card">⚠️ Something went wrong. Please try again!</div>';
+  }
+}
+</script>
+</body>
+</html>
